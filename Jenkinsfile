@@ -1,51 +1,33 @@
 pipeline {
     agent any
-
     environment {
-        // Simülasyon olduğu için gerçek kimlik bilgilerine gerek kalmayacak
-        DOCKER_IMAGE = "my-node-app:latest"
+        // Her build için benzersiz bir etiket oluşturuyoruz (Örn: my-node-app:12)
+        DOCKER_IMAGE = "asiyeturedii/node-pipeline-app:${env.BUILD_NUMBER}"
     }
-
     stages {
         stage('Checkout') {
             steps {
-                // Kodları GitHub'dan çeker
                 checkout scm
             }
         }
-
+        stage('Unit Test') {
+            steps {
+                // Kodun gerçekten çalışıp çalışmadığını kontrol eden aşama
+                echo "Running tests..."
+                sh "echo 'npm test (simulated)'"
+            }
+        }
         stage('Build Docker Image') {
             steps {
-                // Docker imajını gerçekten oluşturur (Mac'inde Docker açıksa çalışır)
+                // Yeni dinamik ismi kullanarak build alıyoruz
                 sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
-
-        stage('Push to ECR') {
+        stage('Push to ECR (Simulated)') {
             steps {
-                // AWS bağlantısı gerektirmemesi için simüle ediyoruz
-                echo "Simulating: AWS ECR Login..."
-                echo "Simulating: docker push ${DOCKER_IMAGE}"
-                sh "echo 'Successfully pushed to ECR'"
+                echo "Pushing ${DOCKER_IMAGE} to repository..."
+                sh "echo 'Successfully pushed ${DOCKER_IMAGE}'"
             }
-        }
-
-        stage('Deploy to EKS') {
-            steps {
-                // kubectl hatası almamak için komutu echo ile simüle ediyoruz
-                echo "Deploying to Kubernetes (EKS)..."
-                sh "echo kubectl apply -f deployment.yaml"
-                sh "echo 'Deployment successful!'"
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "Pipeline başarıyla tamamlandı! 🚀"
-        }
-        failure {
-            echo "Pipeline başarısız oldu. Logları kontrol et."
         }
     }
 }
