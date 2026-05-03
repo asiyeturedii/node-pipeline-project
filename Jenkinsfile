@@ -1,33 +1,61 @@
 pipeline {
     agent any
+
     environment {
-        // Her build için benzersiz bir etiket oluşturuyoruz (Örn: my-node-app:12)
-        DOCKER_IMAGE = "asiyeturedii/node-pipeline-app:${env.BUILD_NUMBER}"
+        // Docker Hub kullanıcı adın ve imaj adın
+        DOCKER_HUB_USER = "asiyeturedi" 
+        IMAGE_NAME = "node-pipeline-app"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        FULL_IMAGE = "${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
+
     stages {
         stage('Checkout') {
             steps {
+                // GitHub'dan son kodları çekiyoruz
                 checkout scm
             }
         }
-        stage('Unit Test') {
-            steps {
-                // Kodun gerçekten çalışıp çalışmadığını kontrol eden aşama
-                echo "Running tests..."
-                sh "echo 'npm test (simulated)'"
-            }
-        }
+
         stage('Build Docker Image') {
             steps {
-                // Yeni dinamik ismi kullanarak build alıyoruz
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                // Bilgisayarındaki Docker'ı kullanarak build alıyoruz
+                sh "docker build -t ${FULL_IMAGE} ."
             }
         }
-        stage('Push to ECR (Simulated)') {
+
+        stage('Login & Push to Docker Hub') {
             steps {
-                echo "Pushing ${DOCKER_IMAGE} to repository..."
-                sh "echo 'Successfully pushed ${DOCKER_IMAGE}'"
+                // 'docker-hub-credentials' ID'li veriyi Jenkins ayarlarından çekiyoruz
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
+                                                 passwordVariable: 'DOCKER_HUB_PASSWORD', 
+                                                 usernameVariable: 'DOCKER_HUB_USERNAME')]) {
+                    
+                    // Docker Hub'a giriş yap
+                    sh "echo ${DOCKER_HUB_PASSWORD} | docker login -u ${DOCKER_HUB_USERNAME} --password-stdin"
+                    
+                    // Benzersiz build numarasıyla pushla
+                    echo "Pushing: ${FULL_IMAGE}"
+                    sh "docker push ${FULL_IMAGE}"
+                    
+                    // Bir de 'latest' etiketiyle işaretleyip pushla (en güncel sürüm için)
+                    sh "docker tag ${FULL_IMAGE} ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
+                    sh "docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
+                }
             }
+        }
+    }
+
+    post {
+        always {
+            // İş bittiğinde güvenlik için logout ol
+            sh "docker logout"
+        }
+        success {
+            echo "Pipeline başarıyla tamamlandı ve imaj Docker Hub'a yüklendi! "
+        }
+        failure {
+            echo "Bir hata oluştu, logları kontrol et. "
         }
     }
 }
