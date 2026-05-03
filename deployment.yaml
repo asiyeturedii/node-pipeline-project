@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-app-deployment
+spec:
+  replicas: 2 # 2 adet yedekli pod çalışsın
+  selector:
+    matchLabels:
+      app: node-app
+  template:
+    metadata:
+      labels:
+        app: node-app
+    spec:
+      containers:
+        - name: node-app-container
+          image: your-ecr-repo-url/my-node-app:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "256Mi" # Garanti edilen RAM
+              cpu: "250m" # Garanti edilen CPU
+            limits:
+              memory: "512Mi" # Aşamayacağı RAM sınırı (Aşarsa OOMKilled)
+              cpu: "500m" # Aşamayacağı CPU sınırı
