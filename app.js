@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
       </head>
       <body>
         <div class="container">
-          <h1>Merhaba Asiye! 👋</h1>
+          <h1>Merhaba!</h1>
           <p>CI/CD Webhook testimiz başarıyla tamamlandı.</p>
           <p class="status">Jenkins bu build'i senin için otomatik başlattı! 🚀</p>
         </div>
